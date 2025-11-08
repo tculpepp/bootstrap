@@ -33,6 +33,9 @@ system:
     screenshots:
       location: "~/Documents/Screenshots"
       format: "png"            # png, jpg, or pdf
+    
+    trackpad:
+      natural_scrolling: true  # true = Natural scrolling, false = Traditional scrolling
 ```
 
 ### Adding More System Preferences

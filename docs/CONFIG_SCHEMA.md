@@ -33,6 +33,11 @@ system:
       format: "png" | "jpg" | "pdf"
       # ... additional screenshot settings
     
+    trackpad:
+      natural_scrolling: true | false
+      # true = Natural scrolling (content moves with finger)
+      # false = Traditional scrolling (content moves opposite to finger)
+    
     # ... additional system preference sections
 
 # Package Installation

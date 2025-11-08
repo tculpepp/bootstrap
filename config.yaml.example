@@ -31,6 +31,11 @@ system:
     screenshots:
       location: "~/Documents/Screenshots"  # Where to save screenshots
       format: "png"             # Screenshot format: "png", "jpg", "pdf"
+    
+    # Trackpad/Scroll Settings
+    trackpad:
+      natural_scrolling: true   # Natural scrolling (content moves with finger)
+                                # false = Traditional scrolling (content moves opposite to finger)
 
 ###############################################################################
 # Package Installation

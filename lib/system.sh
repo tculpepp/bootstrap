@@ -190,6 +190,41 @@ apply_screenshot_settings() {
 }
 
 ###############################################################################
+#  Apply Trackpad/Scroll Settings
+#  Usage: apply_trackpad_settings
+#  Returns: 0 on success, 1 on failure
+###############################################################################
+
+apply_trackpad_settings() {
+  log_info "[system] Configuring trackpad/scroll settings..."
+  
+  local natural_scrolling
+  
+  # Get trackpad settings from config
+  natural_scrolling=$(get_config_value "system.preferences.trackpad.natural_scrolling" "")
+  
+  # Apply natural scrolling setting
+  if [[ -n "$natural_scrolling" ]]; then
+    if [[ "$natural_scrolling" == "true" ]]; then
+      defaults write NSGlobalDomain com.apple.swipescrolldirection -bool true || {
+        log_error "[system] Failed to enable natural scrolling"
+        return 1
+      }
+      log_info "[system] Natural scrolling enabled (content moves with finger)"
+    else
+      defaults write NSGlobalDomain com.apple.swipescrolldirection -bool false || {
+        log_error "[system] Failed to disable natural scrolling"
+        return 1
+      }
+      log_info "[system] Traditional scrolling enabled (content moves opposite to finger)"
+    fi
+  fi
+  
+  log_success "[system] Trackpad/scroll settings applied"
+  return 0
+}
+
+###############################################################################
 #  Restart System Services
 #  Usage: restart_system_services [service1] [service2] ...
 #  Returns: 0 on success, 1 on failure
@@ -246,6 +281,11 @@ configure_system_preferences() {
   # Apply screenshot settings
   if has_config_section "system.preferences.screenshots"; then
     apply_screenshot_settings || errors=$((errors + 1))
+  fi
+  
+  # Apply trackpad/scroll settings
+  if has_config_section "system.preferences.trackpad"; then
+    apply_trackpad_settings || errors=$((errors + 1))
   fi
   
   # Restart services if any changes were made
