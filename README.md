@@ -15,6 +15,44 @@ A comprehensive, modular script system for automating macOS system configuration
 
 ## Quick Start
 
+### Option 1: Quick Install Script (Recommended)
+
+**Method 1: Download and run (interactive):**
+```bash
+# Download the install script
+curl -O https://raw.githubusercontent.com/username/bootstrap/main/install.sh
+
+# Run it (will prompt for repository URL)
+bash install.sh
+```
+
+**Method 2: With repository URL:**
+```bash
+# Download and run with repository URL
+curl -fsSL https://raw.githubusercontent.com/username/bootstrap/main/install.sh | bash -s -- https://github.com/username/bootstrap.git
+```
+
+**Method 3: Copy script content directly:**
+1. Open `install.sh` in your browser
+2. Copy the entire script content
+3. Paste into a local file: `nano install.sh` (paste, then save with Ctrl+O, Enter, Ctrl+X)
+4. Run: `bash install.sh`
+
+The install script will:
+- Check if git is installed (install via Homebrew if needed)
+- Prompt you for the repository URL (or use the one provided)
+- Clone the repository
+
+Then run the bootstrap script:
+```bash
+cd bootstrap
+./bootstrap.sh
+```
+
+On first run, the script will automatically create `config.yaml` from the example template.
+
+### Option 2: Manual Installation
+
 1. **Clone the repository:**
    ```bash
    git clone <repository-url>
