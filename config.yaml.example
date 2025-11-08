@@ -1,0 +1,190 @@
+# macOS Configuration Script - Example Configuration File
+# 
+# This is an example configuration file showing all available options.
+# Copy this file to config.yaml and customize it for your needs.
+#
+# Usage:
+#   cp config.yaml.example config.yaml
+#   # Edit config.yaml with your preferences
+#   ./bootstrap.sh
+
+###############################################################################
+# System Preferences
+###############################################################################
+
+system:
+  preferences:
+    # Dock Settings
+    dock:
+      orientation: "left"      # Options: "left", "right", "bottom"
+      autohide: true           # Auto-hide the Dock
+      tilesize: 36             # Dock icon size (default: 36)
+      magnification: false      # Enable magnification on hover
+    
+    # Finder Settings
+    finder:
+      show_pathbar: true       # Show path bar at bottom of Finder windows
+      show_statusbar: true     # Show status bar at bottom of Finder windows
+      preferred_view: "clmv"    # Default view: "clmv" (column), "icnv" (icon), "Nlsv" (list), "Flwv" (flow)
+    
+    # Screenshot Settings
+    screenshots:
+      location: "~/Documents/Screenshots"  # Where to save screenshots
+      format: "png"             # Screenshot format: "png", "jpg", "pdf"
+
+###############################################################################
+# Package Installation
+# 
+# Packages are installed using priority order:
+# 1. Homebrew (formulae/casks) - Highest priority
+# 2. Mac App Store (if not in Homebrew)
+# 3. Direct Download (if not in either)
+###############################################################################
+
+packages:
+  # Homebrew Formulae (command-line tools)
+  formulae:
+    - git
+    - wget
+    - curl
+    - vim
+    - zsh
+    - mas                    # Mac App Store CLI
+    - yq                     # YAML processor (recommended for full config support)
+  
+  # Homebrew Casks (GUI applications)
+  casks:
+    - visual-studio-code
+    - cursor
+    - 1password
+    - 1password-cli          # 1Password CLI for secrets management
+    - google-chrome
+    - firefox
+    - iterm2
+    - slack
+    - spotify
+
+###############################################################################
+# Mac App Store Applications
+# 
+# Requires: mas CLI (installed via Homebrew) and App Store sign-in
+# To find App Store IDs: mas search <app-name>
+###############################################################################
+
+mas:
+  apps:
+    - id: 1234567890         # Replace with actual App Store ID
+      name: "Example App Store App"
+    # Add more apps as needed:
+    # - id: 9876543210
+    #   name: "Another App"
+
+###############################################################################
+# Direct Downloads
+# 
+# Applications to download and install directly from URLs
+# Used when not available via Homebrew or Mac App Store
+###############################################################################
+
+direct_downloads:
+  - name: "Custom Application"
+    url: "https://example.com/app.dmg"
+    install_method: "dmg"     # Options: "dmg", "pkg", "zip", "tar"
+    # Optional:
+    # checksum: "sha256_checksum_here"  # SHA256 checksum for verification
+    # version: "1.0.0"                   # Version string for tracking
+
+###############################################################################
+# Dotfile Configuration
+# 
+# Create or copy configuration files (dotfiles) for various tools
+###############################################################################
+
+dotfiles:
+  # Example: Git configuration
+  - target: "~/.gitconfig"
+    content: |
+      [user]
+        name = Your Name
+        email = your.email@example.com
+      [core]
+        editor = vim
+        autocrlf = input
+      [alias]
+        st = status
+        co = checkout
+        br = branch
+    backup: true              # Backup existing file (default: true)
+    mode: "0644"              # File permissions (default: 0644)
+  
+  # Example: Vim configuration
+  - target: "~/.vimrc"
+    content: |
+      set number
+      set expandtab
+      set tabstop=2
+      set shiftwidth=2
+      syntax on
+    backup: true
+    mode: "0644"
+  
+  # Example: Copy from source file
+  # - target: "~/.tmux.conf"
+  #   source: "~/.config/tmux/tmux.conf"
+  #   backup: true
+  #   mode: "0644"
+
+###############################################################################
+# Shell Configuration
+# 
+# Zsh shell configuration (theme, plugins, aliases)
+###############################################################################
+
+shell:
+  theme: "powerlevel10k"      # Zsh theme (e.g., "powerlevel10k", "oh-my-zsh")
+  plugins:
+    - zsh-autosuggestions
+    - zsh-syntax-highlighting
+    - git
+  aliases:
+    c: "clear"
+    reload: "source ~/.zshrc"
+    ll: "ls -lah"
+    gs: "git status"
+    ga: "git add"
+    gc: "git commit"
+    gp: "git push"
+
+###############################################################################
+# Secrets Management (1Password CLI)
+# 
+# References to secrets stored in 1Password
+# Format: op://<vault>/<item>/<field>
+# 
+# Requires: 1Password CLI installed and authenticated
+# Install: brew install --cask 1password-cli
+# Authenticate: op signin
+###############################################################################
+
+secrets:
+  # Example: GitHub token
+  # github_token:
+  #   op_reference: "op://Private/GitHub Token/token"
+  
+  # Example: API key
+  # api_key:
+  #   op_reference: "op://Work/API Keys/production"
+
+###############################################################################
+# Notes
+###############################################################################
+
+# - All paths support ~ expansion (e.g., ~/Documents)
+# - Boolean values must be: true or false (lowercase)
+# - String values should be quoted
+# - Arrays use YAML list syntax (- item)
+# - Comments start with # and are ignored
+# - Empty sections can be omitted
+# - For full YAML array support (mas.apps, direct_downloads, dotfiles), 
+#   install yq: brew install yq
+

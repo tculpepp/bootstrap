@@ -1,0 +1,41 @@
+# Configuration files (user-specific)
+config.yaml
+*.yaml.local
+
+# Logs
+logs/
+*.log
+*.log.*
+
+# State files
+state/
+*.state
+*.json
+
+# Backups
+*.backup.*
+*~
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Temporary files
+*.tmp
+*.temp
+/tmp/
+
+# Editor files
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+
+# Test files
+test-*
+*.test
+
+# misc
+conductor.md
