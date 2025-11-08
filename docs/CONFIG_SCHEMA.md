@@ -72,6 +72,12 @@ dotfiles:
     backup: true | false  # Default: true
     mode: "<octal_permissions>"  # Default: "0644"
 
+# Git Configuration
+git:
+  user:
+    name: "<your_name>"
+    email: "<your_email@example.com>"
+
 # Shell Configuration
 shell:
   theme: "<theme_name>"  # e.g., "powerlevel10k"
@@ -146,6 +152,13 @@ Configuration files to create or copy.
 **Optional:**
 - `backup`: Whether to backup existing file (default: `true`)
 - `mode`: File permissions in octal (default: `0644`)
+
+### git
+
+Git user configuration.
+
+**user.name**: Git user name (sets `git config --global user.name`)
+**user.email**: Git user email (sets `git config --global user.email`)
 
 ### shell
 

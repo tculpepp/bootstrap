@@ -71,6 +71,7 @@ Modules should explicitly source their dependencies at the top of the file. Depe
 - `direct-download.sh` - Direct download installation
 - `installer.sh` - Priority-based installation coordination
 - `dotfiles.sh` - Dotfile management
+- `git.sh` - Git user configuration
 - `shell.sh` - Shell configuration
 - `secrets.sh` - 1Password CLI integration
 

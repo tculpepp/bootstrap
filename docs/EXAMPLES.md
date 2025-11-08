@@ -7,6 +7,11 @@ Example configurations for different use cases.
 Perfect for getting started quickly:
 
 ```yaml
+git:
+  user:
+    name: "Your Name"
+    email: "your.email@example.com"
+
 packages:
   formulae:
     - git
@@ -63,12 +68,14 @@ direct_downloads:
     url: "https://example.com/tool.dmg"
     install_method: "dmg"
 
+git:
+  user:
+    name: "Developer Name"
+    email: "developer@example.com"
+
 dotfiles:
   - target: "~/.gitconfig"
     content: |
-      [user]
-        name = Developer Name
-        email = developer@example.com
       [core]
         editor = vim
         autocrlf = input
@@ -152,6 +159,11 @@ mas:
 Minimal setup with essential tools only:
 
 ```yaml
+git:
+  user:
+    name: "Your Name"
+    email: "your.email@example.com"
+
 packages:
   formulae:
     - git
@@ -162,9 +174,6 @@ packages:
 dotfiles:
   - target: "~/.gitconfig"
     content: |
-      [user]
-        name = Your Name
-        email = your.email@example.com
       [core]
         editor = vim
     backup: true
@@ -208,12 +217,14 @@ packages:
     - docker
     - postman
 
+git:
+  user:
+    name: "Admin Name"
+    email: "admin@example.com"
+
 dotfiles:
   - target: "~/.gitconfig"
     content: |
-      [user]
-        name = Admin Name
-        email = admin@example.com
       [core]
         editor = vim
       [alias]

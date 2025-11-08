@@ -85,6 +85,7 @@ The script uses a YAML configuration file (`config.yaml`) to define all settings
 - **`mas`**: Mac App Store applications
 - **`direct_downloads`**: Applications to download directly
 - **`dotfiles`**: Configuration files to create
+- **`git`**: Git user name and email
 - **`shell`**: Zsh theme, plugins, and aliases
 - **`secrets`**: 1Password CLI references
 
@@ -149,7 +150,7 @@ See `config.yaml.example` for a complete example with all options.
 Run only specific modules:
 
 ```bash
-./bootstrap.sh --modules system,homebrew,shell
+./bootstrap.sh --modules system,homebrew,git,shell
 ```
 
 Available modules:
@@ -158,6 +159,7 @@ Available modules:
 - `mas` - Mac App Store apps
 - `direct-download` - Direct downloads
 - `dotfiles` - Dotfile configuration
+- `git` - Git user configuration
 - `shell` - Shell configuration
 
 ## How It Works

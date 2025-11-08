@@ -135,6 +135,17 @@ dotfiles:
   #   mode: "0644"
 
 ###############################################################################
+# Git Configuration
+# 
+# Git user name and email settings
+###############################################################################
+
+git:
+  user:
+    name: "Your Name"
+    email: "your.email@example.com"
+
+###############################################################################
 # Shell Configuration
 # 
 # Zsh shell configuration (theme, plugins, aliases)

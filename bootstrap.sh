@@ -32,6 +32,7 @@ source "$SCRIPT_DIR/lib/mas.sh"
 source "$SCRIPT_DIR/lib/direct-download.sh"
 source "$SCRIPT_DIR/lib/dotfiles.sh"
 source "$SCRIPT_DIR/lib/shell.sh"
+source "$SCRIPT_DIR/lib/git.sh"
 source "$SCRIPT_DIR/lib/installer.sh"
 
 ###############################################################################
@@ -50,7 +51,7 @@ Options:
   --overwrite              Automatically overwrite existing configurations
   --continue-on-error      Continue execution even if a step fails
   --modules <list>         Run only specific modules (comma-separated)
-                           Available: system,homebrew,mas,direct-download,dotfiles,shell
+                           Available: system,homebrew,mas,direct-download,dotfiles,git,shell
   --help                   Show this help message
 
 Examples:
@@ -171,6 +172,9 @@ run_module() {
     shell)
       configure_shell
       ;;
+    git)
+      configure_git_user
+      ;;
     *)
       log_warn "Unknown module: $module_name"
       return 1
@@ -259,6 +263,11 @@ main() {
     
     # Dotfiles
     if ! process_dotfiles; then
+      [[ "$CONTINUE_ON_ERROR" != "true" ]] && exit 1
+    fi
+    
+    # Git configuration
+    if ! configure_git_user; then
       [[ "$CONTINUE_ON_ERROR" != "true" ]] && exit 1
     fi
     
