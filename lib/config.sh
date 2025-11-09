@@ -88,7 +88,8 @@ get_config_value() {
   local yaml_path="$1"
   local default_value="${2:-}"
   
-  if [[ "$CONFIG_LOADED" != "true" ]]; then
+  # Allow access during validation if CONFIG_FILE is set (even if CONFIG_LOADED is not yet true)
+  if [[ "$CONFIG_LOADED" != "true" ]] && [[ -z "$CONFIG_FILE" ]]; then
     log_warn "[config] Configuration not loaded. Call load_config() first."
     echo "$default_value"
     return 1
@@ -206,21 +207,27 @@ load_config() {
   # Check for yq availability
   _check_yq_available || log_warn "[config] yq not available, using basic YAML parser"
   
+  # Set CONFIG_FILE temporarily for validation (but don't set CONFIG_LOADED yet)
+  CONFIG_FILE="$config_file"
+  
   # Validate configuration file (enhanced if available)
   if ! validate_config_enhanced "$config_file"; then
     # If default config provided and main config doesn't exist, try default
     if [[ -n "$default_config" ]] && [[ -f "$default_config" ]]; then
       log_info "[config] Using default configuration: $default_config"
       config_file="$default_config"
+      CONFIG_FILE="$config_file"
       if ! validate_config_enhanced "$config_file"; then
+        CONFIG_FILE=""
         return 1
       fi
     else
+      CONFIG_FILE=""
       return 1
     fi
   fi
   
-  CONFIG_FILE="$config_file"
+  # Only set CONFIG_LOADED=true after successful validation
   CONFIG_LOADED=true
   
   log_info "[config] Configuration loaded from: $config_file"

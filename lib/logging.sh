@@ -14,7 +14,7 @@ set -Eeuo pipefail
 # Only define colors if they haven't been defined already (prevents errors on re-sourcing)
 # Use $'...' syntax to interpret escape sequences
 # Disable colors if output is not a terminal (prevents literal escape sequences in logs)
-if [[ -z "${BLUE:-}" ]]; then
+if [[ -z "${BLUE+set}" ]]; then
   if [[ -t 2 ]] && [[ "${NO_COLOR:-}" != "1" ]]; then
     readonly BLUE=$'\033[0;34m'
     readonly GREEN=$'\033[0;32m'
