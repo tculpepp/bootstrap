@@ -59,9 +59,29 @@ Common issues and solutions for the macOS Configuration Script.
    - Check spelling and indentation
    - Ensure proper YAML structure
 
-3. Run the specific module:
+3. Ensure `yq` is installed (required for array parsing):
+   ```bash
+   # The script installs yq automatically, but you can verify:
+   which yq
+   # If missing, install: brew install yq
+   ```
+
+4. For nested values (like `system.preferences.dock.orientation`), ensure:
+   - Values are properly quoted if they contain special characters
+   - YAML indentation is correct (use spaces, not tabs)
+   - The path matches exactly (case-sensitive)
+
+5. Run the specific module:
    ```bash
    ./bootstrap.sh --modules system
+   ```
+
+6. Test config parsing directly:
+   ```bash
+   source lib/logging.sh
+   source lib/config.sh
+   load_config config.yaml
+   get_config_value "system.preferences.dock.orientation"
    ```
 
 ## Installation Issues
@@ -269,6 +289,7 @@ Common issues and solutions for the macOS Configuration Script.
 2. Verify `.zshrc` was created/modified:
    ```bash
    ls -la ~/.zshrc
+   cat ~/.zshrc
    ```
 
 3. Check for syntax errors in generated `.zshrc`:
@@ -276,7 +297,25 @@ Common issues and solutions for the macOS Configuration Script.
    zsh -n ~/.zshrc
    ```
 
-4. Ensure oh-my-zsh or theme is installed if required
+4. **Powerlevel10k Issues:**
+   - Powerlevel10k will automatically run its configuration wizard on first zsh start
+   - If it doesn't, run manually: `p10k configure`
+   - Ensure powerlevel10k is installed: `brew list powerlevel10k`
+
+5. **Plugin Issues:**
+   - Ensure plugins are installed via Homebrew (add to `packages.formulae`)
+   - Verify plugins are installed: `brew list zsh-autosuggestions zsh-syntax-highlighting`
+   - Check plugin paths exist: `ls $(brew --prefix)/share/zsh-autosuggestions/`
+
+6. **Shell Not Changed:**
+   - The script attempts to change default shell to zsh
+   - If it fails, change manually: `chsh -s $(which zsh)`
+   - Changes take effect after logging out/in or opening a new terminal
+
+7. **Check logs for specific errors:**
+   ```bash
+   grep -i shell logs/bootstrap.log
+   ```
 
 ### 1Password CLI Issues
 

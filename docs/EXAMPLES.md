@@ -49,6 +49,9 @@ packages:
     - curl
     - mas
     - yq
+    - zsh-autosuggestions      # Required for shell plugins
+    - zsh-syntax-highlighting  # Required for shell plugins
+    - powerlevel10k            # Required for shell theme
   casks:
     - visual-studio-code
     - cursor
@@ -101,11 +104,9 @@ dotfiles:
 shell:
   theme: "powerlevel10k"
   plugins:
-    - git
-    - node
-    - python
-    - zsh-autosuggestions
-    - zsh-syntax-highlighting
+    - zsh-autosuggestions      # Must be in packages.formulae
+    - zsh-syntax-highlighting  # Must be in packages.formulae
+    - git                       # Git aliases will be added
   aliases:
     ll: "ls -lah"
     gs: "git status"
@@ -235,9 +236,9 @@ dotfiles:
 shell:
   theme: "powerlevel10k"
   plugins:
-    - git
-    - zsh-autosuggestions
-    - zsh-syntax-highlighting
+    - zsh-autosuggestions      # Must be in packages.formulae
+    - zsh-syntax-highlighting  # Must be in packages.formulae
+    - git                       # Git aliases will be added
   aliases:
     ll: "ls -lah"
     la: "ls -la"

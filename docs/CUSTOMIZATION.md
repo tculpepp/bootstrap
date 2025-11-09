@@ -113,19 +113,31 @@ dotfiles:
 
 ### Shell Configuration
 
-Customize shell setup:
+Customize shell setup. The script generates a complete `.zshrc` file:
 
 ```yaml
 shell:
-  theme: "powerlevel10k"
+  theme: "powerlevel10k"  # Currently supports powerlevel10k
   plugins:
-    - zsh-autosuggestions
-    - zsh-syntax-highlighting
-    - your-custom-plugin
+    - zsh-autosuggestions      # Must be installed via Homebrew
+    - zsh-syntax-highlighting  # Must be installed via Homebrew
+    - zsh-history-substring-search  # Must be installed via Homebrew
+    - git                       # Git aliases will be added
   aliases:
-    custom: "your-command"
+    c: "clear"
+    reload: "source ~/.zshrc"
     ll: "ls -lah"
+    gs: "git status"
+    ga: "git add"
+    gc: "git commit"
+    gp: "git push"
 ```
+
+**Important Notes:**
+- Plugins must be installed via Homebrew (add to `packages.formulae`)
+- The script sources plugins from Homebrew installation paths
+- Powerlevel10k will automatically configure itself on first zsh start
+- The script changes your default shell to zsh if it's not already
 
 ## Adding Custom Modules
 
@@ -144,9 +156,9 @@ Create a new module in `lib/` following the standard structure:
 set -Eeuo pipefail
 
 # Source dependencies
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "$SCRIPT_DIR/logging.sh"
-source "$SCRIPT_DIR/config.sh"
+LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$LIB_DIR/logging.sh"
+source "$LIB_DIR/config.sh"
 
 ###############################################################################
 #  Your Custom Function

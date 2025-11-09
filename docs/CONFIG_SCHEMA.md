@@ -167,11 +167,21 @@ Git user configuration.
 
 ### shell
 
-Zsh shell configuration.
+Zsh shell configuration. The script generates a complete `.zshrc` file with theme, plugins, and aliases.
 
-**theme**: Zsh theme name (e.g., "powerlevel10k", "oh-my-zsh")
-**plugins**: List of zsh plugins to install
+**theme**: Zsh theme name (e.g., "powerlevel10k")
+  - Currently supports: `powerlevel10k`
+  - Plugins are sourced from Homebrew installation paths
+  - Powerlevel10k will automatically run its configuration wizard on first zsh start if `~/.p10k.zsh` doesn't exist
+
+**plugins**: List of zsh plugins to install and source
+  - Supported plugins: `zsh-autosuggestions`, `zsh-syntax-highlighting`, `zsh-history-substring-search`, `git`
+  - Plugins must be installed via Homebrew (as formulae)
+  - The script sources plugins from `$(brew --prefix)/share/<plugin-name>/`
+
 **aliases**: Key-value pairs of shell aliases
+  - Format: `alias_name: "alias_command"`
+  - Aliases are written directly to `.zshrc`
 
 ### secrets
 

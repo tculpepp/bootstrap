@@ -85,6 +85,8 @@ On first run, the script will automatically create `config.yaml` from the exampl
 - **Mac App Store sign-in** (if installing App Store apps)
 - **1Password CLI** (optional, for secrets management)
 
+**Note:** The script automatically installs Homebrew and `yq` if they're not already installed, so you don't need to install them manually.
+
 ## Installation
 
 ### Basic Installation
@@ -101,16 +103,13 @@ chmod +x bootstrap.sh
 ./bootstrap.sh
 ```
 
-### Recommended: Install yq for Full YAML Support
+### Automatic Prerequisites Installation
 
-For full configuration support (especially arrays), install `yq`:
+The script automatically installs prerequisites on first run:
+- **Homebrew**: Installed automatically if not present
+- **yq**: Installed via Homebrew for full YAML array support
 
-```bash
-# Install via Homebrew (recommended)
-brew install yq
-
-# Or the script will install it if configured in config.yaml
-```
+You don't need to install these manually - the script handles it for you.
 
 ## Configuration
 
@@ -124,7 +123,7 @@ The script uses a YAML configuration file (`config.yaml`) to define all settings
 - **`direct_downloads`**: Applications to download directly
 - **`dotfiles`**: Configuration files to create
 - **`git`**: Git user name and email
-- **`shell`**: Zsh theme, plugins, and aliases
+- **`shell`**: Zsh theme (powerlevel10k), plugins (from Homebrew), and aliases
 - **`secrets`**: 1Password CLI references
 
 ### Example Configuration
