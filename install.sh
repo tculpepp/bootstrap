@@ -226,7 +226,7 @@ prompt_repo_url() {
   echo "    https://github.com/username/bootstrap"
   echo "    git@github.com:username/bootstrap.git"
   echo ""
-  read -p "Repository URL: " repo_url
+  read -r -p "Repository URL: " repo_url
   
   # Trim whitespace (but preserve the URL structure)
   # Use sed instead of xargs to avoid any URL mangling
