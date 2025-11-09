@@ -8,10 +8,10 @@
 set -Eeuo pipefail
 
 # Source dependencies
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "$SCRIPT_DIR/logging.sh"
-source "$SCRIPT_DIR/config.sh"
-source "$SCRIPT_DIR/homebrew.sh"
+LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$LIB_DIR/logging.sh"
+source "$LIB_DIR/config.sh"
+source "$LIB_DIR/homebrew.sh"
 
 ###############################################################################
 #  Backup Existing Shell Config
