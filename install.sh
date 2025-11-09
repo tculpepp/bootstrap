@@ -219,14 +219,15 @@ install_git() {
 prompt_repo_url() {
   local repo_url=""
   
-  echo ""
-  print_info "Enter the repository URL to clone:"
-  echo "  Examples:"
-  echo "    https://github.com/username/bootstrap.git"
-  echo "    https://github.com/username/bootstrap"
-  echo "    git@github.com:username/bootstrap.git"
-  echo ""
-  read -r -p "Repository URL: " repo_url
+  echo "" >&2
+  print_info "Enter the repository URL to clone:" >&2
+  echo "  Examples:" >&2
+  echo "    https://github.com/username/bootstrap.git" >&2
+  echo "    https://github.com/username/bootstrap" >&2
+  echo "    git@github.com:username/bootstrap.git" >&2
+  echo "" >&2
+  echo -n "Repository URL: " >&2
+  read -r repo_url
   
   # Trim whitespace (but preserve the URL structure)
   # Use sed instead of xargs to avoid any URL mangling
@@ -237,7 +238,8 @@ prompt_repo_url() {
     return 1
   fi
   
-  echo "$repo_url"
+  # Return the URL via stdout (this is how the function returns its value)
+  printf '%s' "$repo_url"
   return 0
 }
 
