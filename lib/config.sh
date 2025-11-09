@@ -45,7 +45,13 @@ _get_config_value_yq() {
   local yaml_path="$1"
   
   if [[ "$YQ_AVAILABLE" == "true" ]] && [[ -f "$CONFIG_FILE" ]]; then
-    yq eval "$yaml_path" "$CONFIG_FILE" 2>/dev/null || echo ""
+    # Use yq to get value and trim whitespace/newlines
+    # Quote the yaml_path to handle paths with dots
+    local value
+    value=$(yq eval ".$yaml_path" "$CONFIG_FILE" 2>/dev/null)
+    # Trim leading/trailing whitespace and newlines
+    value=$(echo "$value" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+    echo "$value"
   else
     echo ""
   fi
@@ -377,8 +383,8 @@ get_config_array() {
   local yaml_path="$1"
   
   if [[ "$YQ_AVAILABLE" == "true" ]] && [[ -f "$CONFIG_FILE" ]]; then
-    # Use yq to get array values
-    yq eval "$yaml_path[]" "$CONFIG_FILE" 2>/dev/null | tr '\n' ' ' | sed 's/[[:space:]]*$//' || echo ""
+    # Use yq to get array values (add dot prefix for yq path)
+    yq eval ".$yaml_path[]" "$CONFIG_FILE" 2>/dev/null | tr '\n' ' ' | sed 's/[[:space:]]*$//' || echo ""
   else
     # Basic array parsing for simple YAML arrays
     if [[ ! -f "$CONFIG_FILE" ]]; then

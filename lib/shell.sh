@@ -147,14 +147,19 @@ configure_shell() {
   theme=$(get_config_value "shell.theme" "")
   
   # Get plugins (simplified - would need yq for full array parsing)
-  local plugins_str
-  plugins_str=$(get_config_value "shell.plugins" "")
+  # Get plugins array
+  local plugins
+  plugins=$(get_config_array "shell.plugins")
   
   # Install plugins if specified
-  if [[ -n "$plugins_str" ]]; then
+  if [[ -n "$plugins" ]]; then
     log_info "[shell] Installing shell plugins..."
+    # Convert space-separated string to array
+    read -ra plugins_array <<< "$plugins"
+    log_info "[shell] Found ${#plugins_array[@]} plugins to install"
     # Plugin installation would be handled here
-    # This is simplified - full implementation would parse plugin array
+  else
+    log_info "[shell] No plugins configured"
   fi
   
   # Generate and write .zshrc
@@ -163,7 +168,6 @@ configure_shell() {
   # For now, just log that configuration would be applied
   # Full implementation would generate complete .zshrc
   log_info "[shell] Shell configuration would be applied here"
-  log_warn "[shell] Full shell configuration requires yq for array parsing"
   
   return 0
 }
