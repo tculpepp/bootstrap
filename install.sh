@@ -221,7 +221,10 @@ prompt_repo_url() {
   
   echo ""
   print_info "Enter the repository URL to clone:"
-  echo "  (e.g., https://github.com/username/bootstrap.git)"
+  echo "  Examples:"
+  echo "    https://github.com/username/bootstrap.git"
+  echo "    https://github.com/username/bootstrap"
+  echo "    git@github.com:username/bootstrap.git"
   echo ""
   read -p "Repository URL: " repo_url
   
@@ -247,6 +250,18 @@ clone_repo() {
   local repo_url="$1"
   local target_dir="${2:-bootstrap}"
   
+  # Validate that git is available
+  if ! is_git_installed; then
+    print_error "Git is not available. Cannot clone repository."
+    return 1
+  fi
+  
+  # Basic URL validation
+  if [[ -z "$repo_url" ]]; then
+    print_error "Repository URL is empty"
+    return 1
+  fi
+  
   if [[ -d "$target_dir" ]]; then
     print_warn "Directory '$target_dir' already exists."
     read -p "Remove it and clone fresh? (y/N): " -n 1 -r
@@ -260,12 +275,61 @@ clone_repo() {
     fi
   fi
   
-  print_info "Cloning repository..."
-  if git clone "$repo_url" "$target_dir"; then
+  print_info "Cloning repository from: $repo_url"
+  print_info "Target directory: $target_dir"
+  echo ""
+  
+  # Capture git clone output and error
+  local clone_output
+  local clone_status=0
+  
+  # Run git clone and capture both output and exit status
+  # Temporarily disable strict error handling to capture status
+  set +e  # Disable exit on error
+  set +o pipefail  # Disable pipefail
+  clone_output=$(git clone "$repo_url" "$target_dir" 2>&1)
+  clone_status=$?
+  set -e  # Re-enable exit on error
+  set -o pipefail  # Re-enable pipefail
+  
+  if [[ $clone_status -eq 0 ]]; then
     print_info "Repository cloned successfully to: $target_dir"
     return 0
   else
-    print_error "Failed to clone repository"
+    echo ""
+    print_error "Failed to clone repository (exit code: $clone_status)"
+    echo ""
+    print_info "Git error output:"
+    echo "$clone_output" | sed 's/^/  /'
+    echo ""
+    
+    # Provide helpful troubleshooting based on common errors
+    if echo "$clone_output" | grep -qi "could not resolve host"; then
+      print_error "Network error: Could not reach the repository host"
+      print_info "Check your internet connection and try again"
+    elif echo "$clone_output" | grep -qi "permission denied"; then
+      print_error "Permission denied"
+      print_info "If this is a private repository, you may need to:"
+      echo "  - Use SSH authentication (git@github.com:user/repo.git)"
+      echo "  - Configure git credentials for HTTPS"
+      echo "  - Use a personal access token for HTTPS"
+    elif echo "$clone_output" | grep -qi "repository not found"; then
+      print_error "Repository not found"
+      print_info "Please verify:"
+      echo "  - The repository URL is correct"
+      echo "  - The repository exists and is accessible"
+      echo "  - You have permission to access the repository"
+    elif echo "$clone_output" | grep -qi "fatal: not a git repository"; then
+      print_error "Invalid repository URL"
+      print_info "The URL does not appear to be a valid git repository"
+    else
+      print_info "Troubleshooting tips:"
+      echo "  - Verify the repository URL is correct"
+      echo "  - Check your internet connection"
+      echo "  - For private repos, ensure you're authenticated"
+      echo "  - Try cloning manually: git clone $repo_url"
+    fi
+    
     return 1
   fi
 }
@@ -287,6 +351,14 @@ Options:
 Examples:
   $0
   $0 https://github.com/username/bootstrap.git
+  $0 https://github.com/username/bootstrap
+  $0 git@github.com:username/bootstrap.git
+
+Repository URL Formats Supported:
+  - HTTPS: https://github.com/username/repo.git
+  - HTTPS (no .git): https://github.com/username/repo
+  - SSH: git@github.com:username/repo.git
+  - Any format accepted by 'git clone'
 
 EOF
 }
