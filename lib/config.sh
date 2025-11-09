@@ -66,16 +66,97 @@ _get_config_value_simple() {
     return 1
   fi
   
-  # Convert key path (e.g., "system.preferences.dock.orientation") to grep pattern
-  # This is a very basic implementation for simple key-value pairs
-  # For complex YAML, yq should be used
+  # Convert key path (e.g., "system.preferences.dock.orientation") to array
+  # Split by dots to get nested keys
+  local keys
+  IFS='.' read -ra keys <<< "$key_path"
   
-  local key
-  key=$(echo "$key_path" | sed 's/\./\\./g')
+  # Find the section by following the nested structure
+  local num_keys=${#keys[@]}
+  local target_key="${keys[$((num_keys - 1))]}"  # Last key is the one we want the value for
+  # Build parent keys array (all keys except the last) - bash 3.2 compatible
+  local parent_keys=()
+  local i
+  for ((i=0; i<$((num_keys - 1)); i++)); do
+    parent_keys+=("${keys[$i]}")
+  done
   
-  # Try to extract value (very basic - only works for simple cases)
-  grep -E "^[[:space:]]*${key}:" "$CONFIG_FILE" 2>/dev/null | \
-    sed -E 's/^[[:space:]]*[^:]+:[[:space:]]*["'\'']?([^"'\'']*)["'\'']?[[:space:]]*$/\1/' || echo ""
+  # First, find the parent section by following the key path
+  local line_num=0
+  local indent_stack=()
+  local key_stack=()
+  
+  while IFS= read -r line; do
+    line_num=$((line_num + 1))
+    
+    # Skip empty lines and comments
+    [[ "$line" =~ ^[[:space:]]*# ]] && continue
+    [[ "$line" =~ ^[[:space:]]*$ ]] && continue
+    
+    # Get indentation level (count leading spaces)
+    local indent=0
+    while [[ ${line:$indent:1} == " " ]]; do
+      indent=$((indent + 1))
+    done
+    
+    # Extract key from line (everything before the colon)
+    local line_key
+    line_key=$(echo "$line" | sed 's/[[:space:]]*\([^:]*\):.*/\1/' | xargs)
+    
+    # Remove keys from stack that are at same or greater indentation (bash 3.2 compatible)
+    local stack_size=${#indent_stack[@]:-0}
+    while [[ $stack_size -gt 0 ]]; do
+      local last_indent="${indent_stack[$((stack_size - 1))]}"
+      if [[ $last_indent -ge $indent ]]; then
+        # Remove last element by creating new array without it
+        local new_indent_stack=()
+        local new_key_stack=()
+        local j
+        for ((j=0; j<$((stack_size - 1)); j++)); do
+          new_indent_stack+=("${indent_stack[$j]}")
+          new_key_stack+=("${key_stack[$j]}")
+        done
+        if [[ ${#new_indent_stack[@]} -gt 0 ]]; then
+          indent_stack=("${new_indent_stack[@]}")
+          key_stack=("${new_key_stack[@]}")
+        else
+          indent_stack=()
+          key_stack=()
+        fi
+        stack_size=${#indent_stack[@]:-0}
+      else
+        break
+      fi
+    done
+    
+    # Add current key to stack
+    indent_stack+=("$indent")
+    key_stack+=("$line_key")
+    
+    # Build current path from stack
+    local current_path
+    current_path=$(IFS='.'; echo "${key_stack[*]}")
+    
+    # Check if we're at the target key
+    if [[ "$line_key" == "$target_key" ]]; then
+      # Check if the path matches (either exact match or parent path matches)
+      local path_to_check=""
+      if [[ ${#parent_keys[@]:-0} -gt 0 ]]; then
+        path_to_check=$(IFS='.'; echo "${parent_keys[*]}")
+      fi
+      
+      if [[ ${#parent_keys[@]:-0} -eq 0 ]] || [[ "$current_path" == "$key_path" ]] || [[ -n "$path_to_check" && "$current_path" == "$path_to_check.$target_key" ]]; then
+        # Extract value (everything after the colon, remove quotes and comments)
+        local value
+        value=$(echo "$line" | sed -E 's/^[^:]+:[[:space:]]*//' | sed -E 's/[[:space:]]*#.*$//' | sed -E 's/^["'\''](.*)["'\'']$/\1/' | xargs)
+        echo "$value"
+        return 0
+      fi
+    fi
+  done < "$CONFIG_FILE"
+  
+  echo ""
+  return 1
 }
 
 ###############################################################################
@@ -121,14 +202,41 @@ get_config_value() {
 
 has_config_section() {
   local section_path="$1"
+  
+  # Allow access during validation if CONFIG_FILE is set
+  if [[ "$CONFIG_LOADED" != "true" ]] && [[ -z "$CONFIG_FILE" ]]; then
+    return 1
+  fi
+  
+  # For sections, check if the key exists in the YAML (even if it has no direct value)
+  # A section exists if:
+  # 1. It has a direct value (not empty, not null)
+  # 2. OR it appears as a key with a colon (indicating it's a section/container)
+  
   local value
   value=$(get_config_value "$section_path")
   
+  # If it has a non-empty, non-null value, it exists
   if [[ -n "$value" ]] && [[ "$value" != "null" ]]; then
     return 0
-  else
-    return 1
   fi
+  
+  # Otherwise, check if the key exists in the file (as a section/container)
+  if [[ -f "$CONFIG_FILE" ]]; then
+    # Convert section path to last key
+    local keys
+    IFS='.' read -ra keys <<< "$section_path"
+    local num_keys=${#keys[@]}
+    local section_key="${keys[$((num_keys - 1))]}"
+    
+    # Check if this key appears in the file (with proper indentation context)
+    # This is a simplified check - for full support, yq should be used
+    if grep -qE "^[[:space:]]*${section_key}:" "$CONFIG_FILE" 2>/dev/null; then
+      return 0
+    fi
+  fi
+  
+  return 1
 }
 
 ###############################################################################
@@ -272,9 +380,125 @@ get_config_array() {
     # Use yq to get array values
     yq eval "$yaml_path[]" "$CONFIG_FILE" 2>/dev/null | tr '\n' ' ' | sed 's/[[:space:]]*$//' || echo ""
   else
-    # Basic array parsing (very limited)
-    log_warn "[config] Array parsing without yq is limited. Install yq for full support."
-    echo ""
+    # Basic array parsing for simple YAML arrays
+    if [[ ! -f "$CONFIG_FILE" ]]; then
+      echo ""
+      return 1
+    fi
+    
+    # Find the array section by following the nested structure
+    local keys
+    IFS='.' read -ra keys <<< "$yaml_path"
+    local num_keys=${#keys[@]}
+    local array_key="${keys[$((num_keys - 1))]}"
+    
+    # Build parent keys array
+    local parent_keys=()
+    local i
+    for ((i=0; i<$((num_keys - 1)); i++)); do
+      parent_keys+=("${keys[$i]}")
+    done
+    
+    # Find the array section and extract list items
+    local in_array=false
+    local array_items=()
+    local line_num=0
+    local indent_stack=()
+    local key_stack=()
+    local target_array_indent=-1
+    
+    while IFS= read -r line; do
+      line_num=$((line_num + 1))
+      
+      # Skip comments
+      [[ "$line" =~ ^[[:space:]]*# ]] && continue
+      [[ "$line" =~ ^[[:space:]]*$ ]] && continue
+      
+      # Get indentation
+      local indent=0
+      while [[ ${line:$indent:1} == " " ]]; do
+        indent=$((indent + 1))
+      done
+      
+      # Extract key from line
+      local line_key
+      line_key=$(echo "$line" | sed 's/[[:space:]]*\([^:]*\):.*/\1/' | xargs)
+      
+      # Update stack (same logic as _get_config_value_simple)
+      local stack_size=${#indent_stack[@]:-0}
+      while [[ $stack_size -gt 0 ]]; do
+        local last_indent="${indent_stack[$((stack_size - 1))]}"
+        if [[ $last_indent -ge $indent ]]; then
+          local new_indent_stack=()
+          local new_key_stack=()
+          local j
+          for ((j=0; j<$((stack_size - 1)); j++)); do
+            new_indent_stack+=("${indent_stack[$j]}")
+            new_key_stack+=("${key_stack[$j]}")
+          done
+          if [[ ${#new_indent_stack[@]} -gt 0 ]]; then
+            indent_stack=("${new_indent_stack[@]}")
+            key_stack=("${new_key_stack[@]}")
+          else
+            indent_stack=()
+            key_stack=()
+          fi
+          stack_size=${#indent_stack[@]:-0}
+        else
+          break
+        fi
+      done
+      
+      # Build current path from stack
+      local current_path=""
+      if [[ ${#key_stack[@]:-0} -gt 0 ]]; then
+        current_path=$(IFS='.'; echo "${key_stack[*]}")
+      fi
+      
+      # Check if we found the array key with correct parent path
+      if [[ "$line_key" == "$array_key" ]] && [[ "$line" =~ :[[:space:]]*$ ]]; then
+        # Check if parent path matches
+        local path_to_check=""
+        if [[ ${#parent_keys[@]:-0} -gt 0 ]]; then
+          path_to_check=$(IFS='.'; echo "${parent_keys[*]}")
+        fi
+        
+        if [[ ${#parent_keys[@]:-0} -eq 0 ]] || [[ "$current_path" == "$yaml_path" ]] || [[ -n "$path_to_check" && "$current_path" == "$path_to_check.$array_key" ]]; then
+          # This is the array declaration (ends with just colon)
+          in_array=true
+          target_array_indent=$indent
+          continue
+        fi
+      fi
+      
+      # If we're in the array, collect list items (lines starting with -)
+      if [[ "$in_array" == "true" ]]; then
+        # Check if we've moved to a different section (less or equal indentation to array declaration)
+        if [[ $indent -le $target_array_indent ]] && [[ ! "$line" =~ ^[[:space:]]*-[[:space:]] ]]; then
+          # We've moved to a different section
+          break
+        fi
+        
+        # Collect list items (lines starting with -)
+        if [[ "$line" =~ ^[[:space:]]*-[[:space:]] ]]; then
+          # Extract the list item value
+          local item_value
+          item_value=$(echo "$line" | sed -E 's/^[[:space:]]*-[[:space:]]*//' | sed -E 's/[[:space:]]*#.*$//' | sed -E 's/^["'\''](.*)["'\'']$/\1/' | xargs)
+          if [[ -n "$item_value" ]]; then
+            array_items+=("$item_value")
+          fi
+        fi
+      fi
+    done < "$CONFIG_FILE"
+    
+    # Return space-separated list
+    if [[ ${#array_items[@]} -gt 0 ]]; then
+      echo "${array_items[*]}"
+      return 0
+    else
+      echo ""
+      return 1
+    fi
   fi
 }
 

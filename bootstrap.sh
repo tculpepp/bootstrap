@@ -25,9 +25,9 @@ LOG_DIR="$SCRIPT_DIR/logs"
 
 source "$SCRIPT_DIR/lib/logging.sh"
 source "$SCRIPT_DIR/lib/config.sh"
+source "$SCRIPT_DIR/lib/homebrew.sh"
 source "$SCRIPT_DIR/lib/secrets.sh"
 source "$SCRIPT_DIR/lib/system.sh"
-source "$SCRIPT_DIR/lib/homebrew.sh"
 source "$SCRIPT_DIR/lib/mas.sh"
 source "$SCRIPT_DIR/lib/direct-download.sh"
 source "$SCRIPT_DIR/lib/dotfiles.sh"
@@ -145,6 +145,62 @@ show_welcome() {
 }
 
 ###############################################################################
+#  Setup Prerequisites
+#  Installs Homebrew and yq if not already installed
+#  Usage: setup_prerequisites
+#  Returns: 0 on success, 1 on failure
+###############################################################################
+
+setup_prerequisites() {
+  log_info "Setting up prerequisites (Homebrew and yq)..."
+  
+  # Install Homebrew if not installed
+  if ! command -v brew &> /dev/null; then
+    log_info "Homebrew not found. Installing Homebrew..."
+    if ! bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"; then
+      log_error "Failed to install Homebrew"
+      return 1
+    fi
+    
+    # Add Homebrew to PATH if needed (for Apple Silicon)
+    if [[ $(uname -m) == "arm64" ]]; then
+      local brew_path="/opt/homebrew/bin"
+      if [[ ":$PATH:" != *":$brew_path:"* ]]; then
+        export PATH="$brew_path:$PATH"
+        log_info "Added Homebrew to PATH for Apple Silicon"
+      fi
+    fi
+    
+    # Verify Homebrew installation
+    if ! command -v brew &> /dev/null; then
+      log_error "Homebrew installation completed but brew command not found"
+      log_info "You may need to restart your terminal or run: eval \"\$(/opt/homebrew/bin/brew shellenv)\""
+      return 1
+    fi
+    
+    log_success "Homebrew installed successfully"
+  else
+    log_info "Homebrew is already installed"
+  fi
+  
+  # Install yq if not installed
+  if ! command -v yq &> /dev/null; then
+    log_info "yq not found. Installing yq via Homebrew..."
+    if brew install yq; then
+      log_success "yq installed successfully"
+    else
+      log_warn "Failed to install yq. Config parsing will use basic parser (limited functionality)"
+      return 0  # Don't fail if yq installation fails, just warn
+    fi
+  else
+    log_info "yq is already installed"
+  fi
+  
+  log_success "Prerequisites setup completed"
+  return 0
+}
+
+###############################################################################
 #  Run Module
 #  Usage: run_module <module_name>
 #  Returns: 0 on success, 1 on failure
@@ -208,6 +264,15 @@ main() {
       exit 1
     fi
   }
+  
+  # Setup prerequisites (Homebrew and yq) before loading config
+  if ! setup_prerequisites; then
+    log_error "Failed to setup prerequisites"
+    if [[ "$CONTINUE_ON_ERROR" != "true" ]]; then
+      exit 1
+    fi
+    log_warn "Continuing despite prerequisite setup issues..."
+  fi
   
   # Load configuration
   if ! load_config "$CONFIG_FILE"; then
