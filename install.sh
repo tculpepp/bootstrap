@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 ###############################################################################
 #  Quick Install Script
-#  Purpose: Install git (if needed) and clone the macOS Configuration Script
+#  Purpose: Install Xcode Command Line Tools (includes git) and clone the repo
 #  Usage: Copy this script, paste it locally, and execute: bash install.sh
 ###############################################################################
 
@@ -30,6 +30,103 @@ print_warn() {
 
 print_error() {
   echo -e "${RED}❌ $1${NC}"
+}
+
+###############################################################################
+#  Check if Command Line Tools are Installed
+#  Returns: 0 if installed, 1 if not
+###############################################################################
+
+is_clt_installed() {
+  # Check if xcode-select can find the tools
+  if xcode-select -p &> /dev/null; then
+    return 0
+  fi
+  
+  # Also check if the directory exists
+  if [[ -d "/Library/Developer/CommandLineTools" ]]; then
+    return 0
+  fi
+  
+  return 1
+}
+
+###############################################################################
+#  Install Command Line Tools
+#  Returns: 0 on success, 1 on failure
+###############################################################################
+
+install_clt() {
+  print_info "Xcode Command Line Tools are required (includes git and other development tools)"
+  echo ""
+  print_info "This will open a system dialog to install Command Line Tools."
+  print_info "Please complete the installation in the dialog, then return here."
+  echo ""
+  read -p "Press RETURN to continue or CTRL-C to cancel..."
+  
+  # Trigger the installation dialog
+  print_info "Opening Command Line Tools installation dialog..."
+  
+  # Check if already installed first
+  if is_clt_installed; then
+    print_info "Command Line Tools are already installed!"
+    return 0
+  fi
+  
+  # Trigger installation (this opens a system dialog)
+  # The command returns 0 if dialog was opened, non-zero if already installed or error
+  local install_output
+  install_output=$(xcode-select --install 2>&1)
+  local install_status=$?
+  
+  # If already installed (shouldn't happen due to check above, but handle anyway)
+  if echo "$install_output" | grep -q "already installed" || [[ $install_status -ne 0 ]]; then
+    if is_clt_installed; then
+      print_info "Command Line Tools are already installed!"
+      return 0
+    fi
+    print_warn "Could not trigger Command Line Tools installation."
+    print_info "You may need to install manually: xcode-select --install"
+    return 1
+  fi
+  
+  # Wait for installation to complete
+  print_info "Waiting for Command Line Tools installation to complete..."
+  print_info "This may take several minutes. Please complete the installation in the dialog."
+  echo ""
+  print_info "Waiting for installation (checking every 5 seconds)..."
+  
+  # Poll for installation completion
+  local max_attempts=60  # 5 minutes max wait
+  local attempt=0
+  
+  while [[ $attempt -lt $max_attempts ]]; do
+    if is_clt_installed; then
+      echo ""
+      print_info "Command Line Tools installation detected!"
+      # Give it a moment to fully initialize
+      sleep 2
+      return 0
+    fi
+    
+    echo -n "."
+    sleep 5
+    attempt=$((attempt + 1))
+  done
+  
+  echo ""
+  print_warn "Installation is taking longer than expected (waited 5 minutes)."
+  print_info "The installation may still be in progress."
+  print_info "You can:"
+  echo "  1. Wait for the installation dialog to complete"
+  echo "  2. Run this script again after installation completes"
+  read -p "Continue anyway? (y/N): " -n 1 -r
+  echo
+  if [[ $REPLY =~ ^[Yy]$ ]]; then
+    return 0
+  fi
+  
+  return 1
 }
 
 ###############################################################################
@@ -66,11 +163,12 @@ install_git_homebrew() {
 }
 
 ###############################################################################
-#  Install Git
+#  Install Git and Command Line Tools
 #  Returns: 0 on success, 1 on failure
 ###############################################################################
 
 install_git() {
+  # Check if git is already installed
   if is_git_installed; then
     print_info "Git is already installed: $(git --version)"
     return 0
@@ -78,7 +176,27 @@ install_git() {
   
   print_warn "Git is not installed."
   echo ""
-  print_info "Attempting to install git via Homebrew..."
+  
+  # First, check and install Command Line Tools (which includes git)
+  if ! is_clt_installed; then
+    print_info "Installing Xcode Command Line Tools (includes git)..."
+    if ! install_clt; then
+      print_error "Command Line Tools installation failed or was cancelled"
+      return 1
+    fi
+  else
+    print_info "Command Line Tools are already installed"
+  fi
+  
+  # Check if git is now available after Command Line Tools installation
+  if is_git_installed; then
+    print_info "Git is now available: $(git --version)"
+    return 0
+  fi
+  
+  # If git is still not available, try Homebrew as fallback
+  print_warn "Git is still not available after Command Line Tools installation."
+  print_info "Attempting to install git via Homebrew as fallback..."
   
   if install_git_homebrew; then
     return 0
@@ -86,9 +204,10 @@ install_git() {
   
   print_error "Could not install git automatically."
   print_info "Please install git manually:"
-  echo "  1. Install Homebrew: https://brew.sh"
-  echo "  2. Run: brew install git"
-  echo "  3. Or download from: https://git-scm.com/download/mac"
+  echo "  1. Install Xcode Command Line Tools: xcode-select --install"
+  echo "  2. Or install Homebrew: https://brew.sh"
+  echo "  3. Then run: brew install git"
+  echo "  4. Or download from: https://git-scm.com/download/mac"
   return 1
 }
 
