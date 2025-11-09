@@ -11,12 +11,25 @@ set -Eeuo pipefail
 #  Color Definitions
 ###############################################################################
 
-readonly BLUE='\033[0;34m'
-readonly GREEN='\033[0;32m'
-readonly YELLOW='\033[1;33m'
-readonly RED='\033[0;31m'
-readonly NC='\033[0m'  # No color
-readonly BOLD='\033[1m'
+# Only define colors if they haven't been defined already (prevents errors on re-sourcing)
+if [[ -z "${BLUE:-}" ]]; then
+  readonly BLUE='\033[0;34m'
+fi
+if [[ -z "${GREEN:-}" ]]; then
+  readonly GREEN='\033[0;32m'
+fi
+if [[ -z "${YELLOW:-}" ]]; then
+  readonly YELLOW='\033[1;33m'
+fi
+if [[ -z "${RED:-}" ]]; then
+  readonly RED='\033[0;31m'
+fi
+if [[ -z "${NC:-}" ]]; then
+  readonly NC='\033[0m'  # No color
+fi
+if [[ -z "${BOLD:-}" ]]; then
+  readonly BOLD='\033[1m'
+fi
 
 ###############################################################################
 #  Global Variables
