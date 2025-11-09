@@ -251,6 +251,12 @@ clone_repo() {
   local repo_url="$1"
   local target_dir="${2:-bootstrap}"
   
+  # Debug: Verify URL was received
+  if [[ -z "$repo_url" ]]; then
+    print_error "clone_repo() received empty URL"
+    return 1
+  fi
+  
   # Validate that git is available
   if ! is_git_installed; then
     print_error "Git is not available. Cannot clone repository."
@@ -276,18 +282,23 @@ clone_repo() {
     fi
   fi
   
+  # Ensure URL is properly quoted and doesn't have extra whitespace
+  repo_url=$(echo "$repo_url" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+  
+  # Validate URL is not empty after trimming
+  if [[ -z "$repo_url" ]]; then
+    print_error "Repository URL is empty after processing"
+    return 1
+  fi
+  
   # Debug: Show what we're about to clone
   print_info "Cloning repository from: $repo_url"
   print_info "Target directory: $target_dir"
   echo ""
   
-  # Ensure URL is properly quoted and doesn't have extra whitespace
-  repo_url=$(echo "$repo_url" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
-  
-  # Show the exact command that will be run
-  echo ""
+  # Show the exact command that will be run (using printf for safety)
   print_info "Executing git command:"
-  echo "  git clone \"$repo_url\" \"$target_dir\""
+  printf "  git clone %q %q\n" "$repo_url" "$target_dir"
   echo ""
   
   # Capture git clone output and error
@@ -427,6 +438,12 @@ main() {
   
   # Trim any extra whitespace from URL
   repo_url=$(echo "$repo_url" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+  
+  # Debug: Show URL before passing to clone function
+  if [[ -z "$repo_url" ]]; then
+    print_error "Repository URL is empty"
+    exit 1
+  fi
   
   # Clone repository
   if ! clone_repo "$repo_url"; then
