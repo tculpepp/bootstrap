@@ -228,8 +228,9 @@ prompt_repo_url() {
   echo ""
   read -p "Repository URL: " repo_url
   
-  # Trim whitespace
-  repo_url=$(echo "$repo_url" | xargs)
+  # Trim whitespace (but preserve the URL structure)
+  # Use sed instead of xargs to avoid any URL mangling
+  repo_url=$(echo "$repo_url" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
   
   if [[ -z "$repo_url" ]]; then
     print_error "Repository URL cannot be empty"
@@ -275,8 +276,18 @@ clone_repo() {
     fi
   fi
   
+  # Debug: Show what we're about to clone
   print_info "Cloning repository from: $repo_url"
   print_info "Target directory: $target_dir"
+  echo ""
+  
+  # Ensure URL is properly quoted and doesn't have extra whitespace
+  repo_url=$(echo "$repo_url" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+  
+  # Show the exact command that will be run
+  echo ""
+  print_info "Executing git command:"
+  echo "  git clone \"$repo_url\" \"$target_dir\""
   echo ""
   
   # Capture git clone output and error
@@ -298,6 +309,12 @@ clone_repo() {
   else
     echo ""
     print_error "Failed to clone repository (exit code: $clone_status)"
+    echo ""
+    print_info "Command that failed:"
+    echo "  git clone \"$repo_url\" \"$target_dir\""
+    echo ""
+    print_info "URL that was used:"
+    echo "  '$repo_url'"
     echo ""
     print_info "Git error output:"
     echo "$clone_output" | sed 's/^/  /'
@@ -368,7 +385,20 @@ EOF
 ###############################################################################
 
 main() {
-  local repo_url="${1:-}"
+  # Capture all arguments to preserve URL if it contains spaces or special chars
+  local repo_url=""
+  
+  # If first argument is help flag, show help
+  if [[ "${1:-}" == "--help" ]] || [[ "${1:-}" == "-h" ]]; then
+    show_help
+    exit 0
+  fi
+  
+  # If first argument exists and is not empty, use it as URL
+  # Join all arguments in case URL was split (shouldn't happen with proper quoting, but be safe)
+  if [[ $# -gt 0 ]]; then
+    repo_url="$*"
+  fi
   
   echo "======================================================"
   print_info "macOS Configuration Script - Quick Install"
@@ -379,12 +409,6 @@ main() {
   if [[ "$(uname)" != "Darwin" ]]; then
     print_error "This script is designed for macOS only"
     exit 1
-  fi
-  
-  # Show help if requested
-  if [[ "$repo_url" == "--help" ]] || [[ "$repo_url" == "-h" ]]; then
-    show_help
-    exit 0
   fi
   
   # Install git if needed
@@ -400,6 +424,9 @@ main() {
       exit 1
     fi
   fi
+  
+  # Trim any extra whitespace from URL
+  repo_url=$(echo "$repo_url" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
   
   # Clone repository
   if ! clone_repo "$repo_url"; then
