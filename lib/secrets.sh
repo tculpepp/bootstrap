@@ -16,7 +16,79 @@ source "$LIB_DIR/config.sh"
 #  Global Variables
 ###############################################################################
 
-declare -A SECRET_CACHE
+# Cache for secrets (bash 3.2 compatible - using array instead of associative array)
+# Format: Each entry is "key|value"
+SECRET_CACHE=()
+
+###############################################################################
+#  Get Cached Secret (bash 3.2 compatible)
+#  Usage: _get_cached_secret <key>
+#  Returns: Cached value or empty string
+###############################################################################
+
+_get_cached_secret() {
+  local key="$1"
+  local entry
+  local cached_key
+  local cached_value
+  
+  # Handle empty/unset array (bash 3.2 compatible with set -u)
+  if [[ ${#SECRET_CACHE[@]:-0} -eq 0 ]]; then
+    echo ""
+    return 1
+  fi
+  
+  for entry in "${SECRET_CACHE[@]}"; do
+    cached_key="${entry%%|*}"
+    if [[ "$cached_key" == "$key" ]]; then
+      cached_value="${entry#*|}"
+      echo "$cached_value"
+      return 0
+    fi
+  done
+  
+  echo ""
+  return 1
+}
+
+###############################################################################
+#  Set Cached Secret (bash 3.2 compatible)
+#  Usage: _set_cached_secret <key> <value>
+#  Returns: 0 on success, 1 on failure
+###############################################################################
+
+_set_cached_secret() {
+  local key="$1"
+  local value="$2"
+  local i=0
+  local entry
+  local cached_key
+  local new_cache=()
+  
+  # Check if key already exists and update it
+  local found=0
+  if [[ ${#SECRET_CACHE[@]:-0} -gt 0 ]]; then
+    for entry in "${SECRET_CACHE[@]}"; do
+      cached_key="${entry%%|*}"
+      if [[ "$cached_key" == "$key" ]]; then
+        new_cache[$i]="$key|$value"
+        found=1
+      else
+        new_cache[$i]="$entry"
+      fi
+      i=$((i + 1))
+    done
+  fi
+  
+  # If key doesn't exist, add it
+  if [[ $found -eq 0 ]]; then
+    new_cache[$i]="$key|$value"
+  fi
+  
+  # Update the cache array (bash 3.2 compatible)
+  SECRET_CACHE=("${new_cache[@]}")
+  return 0
+}
 
 ###############################################################################
 #  Check if 1Password CLI is Installed
@@ -119,10 +191,12 @@ resolve_secret_reference() {
   
   [[ -z "$op_reference" ]] && { log_error "[secrets] 1Password reference required"; echo ""; return; }
   
-  # Check cache first
-  if [[ -n "${SECRET_CACHE[$op_reference]:-}" ]]; then
+  # Check cache first (bash 3.2 compatible)
+  local cached_value
+  cached_value=$(_get_cached_secret "$op_reference")
+  if [[ -n "$cached_value" ]]; then
     log_debug "[secrets] Using cached secret for: $op_reference"
-    echo "${SECRET_CACHE[$op_reference]}"
+    echo "$cached_value"
     return 0
   fi
   
@@ -160,8 +234,8 @@ resolve_secret_reference() {
   secret=$(op read "$op_reference" 2>/dev/null)
   
   if [[ -n "$secret" ]]; then
-    # Cache secret (in memory only)
-    SECRET_CACHE[$op_reference]="$secret"
+    # Cache secret (in memory only, bash 3.2 compatible)
+    _set_cached_secret "$op_reference" "$secret"
     echo "$secret"
     return 0
   else
