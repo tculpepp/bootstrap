@@ -142,7 +142,7 @@ install_clt() {
 ###############################################################################
 
 install_homebrew() {
-  log_info "Setting up prerequisites (Homebrew and yq)..."
+  echo "Setting up prerequisites (Homebrew and yq)..."
   
   # Install Homebrew if not installed
   if ! command -v brew &> /dev/null; then
@@ -170,10 +170,10 @@ install_homebrew() {
     
     log_success "Homebrew installed successfully"
   else
-    log_info "Homebrew is already installed"
+    echo "Homebrew is already installed"
   fi
 
-  log_success "Prerequisites setup completed"
+  echo "Prerequisites setup completed"
   return 0
 }
 
@@ -183,10 +183,10 @@ install_homebrew() {
 ###############################################################################
 
 update_homebrew() {
-  log_info "[homebrew] Updating Homebrew..."
+  echo "[homebrew] Updating Homebrew..."
   
   if brew update; then
-    log_success "[homebrew] Homebrew updated"
+    echo "[homebrew] Homebrew updated"
     return 0
   else
     log_error "[homebrew] Failed to update Homebrew"
@@ -283,13 +283,13 @@ install_git() {
 
 configure_git() {
   if git config --global user.name "$git_name"; then
-    log_success "[git] Configured user.name"
+    echo "[git] Configured user.name"
   else
     log_error "[git] Failed to configure user.name"
     errors=$((errors + 1))
   fi
   if git config --global user.email "$git_email"; then
-    log_success "[git] Configured user.email"
+    echo "[git] Configured user.email"
   else
     log_error "[git] Failed to configure user.email"
     errors=$((errors + 1))
