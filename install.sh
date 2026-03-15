@@ -8,6 +8,13 @@
 set -euo pipefail
 
 ###############################################################################
+# Git Vars
+###############################################################################
+
+git_name="Tom Culpepper"
+git_email="tculpepp@gmail.com"
+
+###############################################################################
 #  Colors for Output
 ###############################################################################
 
@@ -129,6 +136,64 @@ install_clt() {
   return 1
 }
 
+##############################################################################
+# Install HomeBrew
+# Returns: 0 if installer, 1 if not
+###############################################################################
+
+install_homebrew() {
+  log_info "Setting up prerequisites (Homebrew and yq)..."
+  
+  # Install Homebrew if not installed
+  if ! command -v brew &> /dev/null; then
+    log_info "Homebrew not found. Installing Homebrew..."
+    if ! bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"; then
+      log_error "Failed to install Homebrew"
+      return 1
+    fi
+    
+    # Add Homebrew to PATH if needed (for Apple Silicon)
+    if [[ $(uname -m) == "arm64" ]]; then
+      local brew_path="/opt/homebrew/bin"
+      if [[ ":$PATH:" != *":$brew_path:"* ]]; then
+        export PATH="$brew_path:$PATH"
+        log_info "Added Homebrew to PATH for Apple Silicon"
+      fi
+    fi
+    
+    # Verify Homebrew installation
+    if ! command -v brew &> /dev/null; then
+      log_error "Homebrew installation completed but brew command not found"
+      log_info "You may need to restart your terminal or run: eval \"\$(/opt/homebrew/bin/brew shellenv)\""
+      return 1
+    fi
+    
+    log_success "Homebrew installed successfully"
+  else
+    log_info "Homebrew is already installed"
+  fi
+
+  log_success "Prerequisites setup completed"
+  return 0
+}
+
+##############################################################################
+# Update HomeBrew
+# Returns: 0 if installer, 1 if not
+###############################################################################
+
+update_homebrew() {
+  log_info "[homebrew] Updating Homebrew..."
+  
+  if brew update; then
+    log_success "[homebrew] Homebrew updated"
+    return 0
+  else
+    log_error "[homebrew] Failed to update Homebrew"
+    return 1
+  fi
+}
+
 ###############################################################################
 #  Check if Git is Installed
 #  Returns: 0 if installed, 1 if not
@@ -211,6 +276,25 @@ install_git() {
   return 1
 }
 
+###############################################################################
+# Configure Git
+# Returns: 0 on success, 1 on failure
+###############################################################################
+
+configure_git() {
+  if git config --global user.name "$git_name"; then
+    log_success "[git] Configured user.name"
+  else
+    log_error "[git] Failed to configure user.name"
+    errors=$((errors + 1))
+  fi
+  if git config --global user.email "$git_email"; then
+    log_success "[git] Configured user.email"
+  else
+    log_error "[git] Failed to configure user.email"
+    errors=$((errors + 1))
+  fi
+}
 ###############################################################################
 #  Prompt for Repository URL
 #  Returns: Repository URL or empty string
@@ -423,12 +507,25 @@ main() {
     print_error "This script is designed for macOS only"
     exit 1
   fi
+
+  # install HomeBrew
+  if ! install_homebrew; then
+    print_error "HomeBrew installation failed. Please install HomeBrew manually and try again."
+    exit 1
+  fi
+
+  if ! update_homebrew; then
+    print_error "HomeBrew update failed. Please update Homebrew manually and try again."
+    exit 1
+  fi
   
   # Install git if needed
   if ! install_git; then
     print_error "Git installation failed. Please install git manually and try again."
     exit 1
   fi
+
+  configure_git
   
   # Get repository URL (from argument or prompt)
   if [[ -z "$repo_url" ]]; then
