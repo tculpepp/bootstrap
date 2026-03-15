@@ -27,13 +27,14 @@ source "$SCRIPT_DIR/lib/logging.sh"
 source "$SCRIPT_DIR/lib/config.sh"
 source "$SCRIPT_DIR/lib/homebrew.sh"
 source "$SCRIPT_DIR/lib/secrets.sh"
-source "$SCRIPT_DIR/lib/system.sh"
+# source "$SCRIPT_DIR/lib/system.sh"
 source "$SCRIPT_DIR/lib/mas.sh"
 source "$SCRIPT_DIR/lib/direct-download.sh"
 source "$SCRIPT_DIR/lib/dotfiles.sh"
 source "$SCRIPT_DIR/lib/shell.sh"
 source "$SCRIPT_DIR/lib/git.sh"
 source "$SCRIPT_DIR/lib/installer.sh"
+source "$SCRIPT_DIR/lib/defaults.sh"
 
 ###############################################################################
 #  Show Help
